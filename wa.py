@@ -1,6 +1,5 @@
 
 from bleak import (
-    BleakClient,
     BleakScanner,
 )
 
@@ -28,7 +27,8 @@ from transtek.bleUuids import (
 )
 
 async def main():
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     password = bytearray.fromhex(os.environ.get('WA_BLE_PASSWORD', ''))
 
     # optional device address – connect directly to device without waiting for advertisements
@@ -44,7 +44,6 @@ async def main():
     #await transtekController.initialize()
     #return
 
-    logger.info("Scanning for BLE devices...")
 #    device = await BleakScanner.find_device_by_filter(
 #        filterfunc = foobar,
 #        return_adv = False,
@@ -65,6 +64,7 @@ async def main():
 #        device = devices[0]
 
     if deviceAddress is None:
+        logger.info("Scanning for BLE devices...")
         async with BleakScanner(
             service_uuids = [TRANSTEK_BP_SERVICE],
             ) as scanner:
@@ -88,22 +88,35 @@ async def main():
 
     logger.info("Connecting to BP monitor...")
 
-    async with BleakClient(device) as client:
-        #model_number = await client.read_gatt_char(MANUFACTURER_NAME_CHAR)
-        #logger.info("Model number = {}".format(model_number))
+#    async with BleakClient(
+#        device,
+#        disconnected_callback=clientDisconnect,
+#        timeout=BLE_CONNECT_TIMEOUT_SECONDS
+#        ) as client:
+#        #model_number = await client.read_gatt_char(MANUFACTURER_NAME_CHAR)
+#        #logger.info("Model number = {}".format(model_number))
+#
+#        await client.connect()
 
-        await client.connect()
+    transtekController = TranstekController(TranstekBleDriver(device), password)
 
-        transtekController = TranstekController(TranstekBleDriver(client), password)
+    # Once the controller is initialized, it will respond asynchronously
+    # to BLE indications from the BP device.
+    await transtekController.initialize()
 
-        # Once the controller is initialized, it will respond asynchronously to BLE advertisements and
-        # indications from the BP device.
-        await transtekController.initialize()
+    # wait until the client is disconnected before printing, etc.
 
-        async for bpData in transtekController.bpData():
-            pprint.pprint(bpData)
+    async for bpData in transtekController.bpData():
+        pprint.pprint(bpData)
 
-        await asyncio.sleep(1000)
+    print("BLE controller out of data")
+    await transtekController.join()
 
+    print("BLE connection done!")
+
+
+def clientDisconnect(client):
+    # BleakClient disconnect callback
+    logger.info("Client disconnected.")
 if __name__ == '__main__':
     asyncio.run(main())

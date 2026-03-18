@@ -114,36 +114,41 @@ class TranstekController(object):
 
         self.bpDataQueue = asyncio.Queue()
 
+    async def onFinished(self):
+        await self.bleDriver.finished.wait()
+        self.close()
+
     async def initialize(self):
         logger.debug("Initializing Transtek BLE client...")
-        self.deviceInfo = await self.getDeviceInfo() # TODO: handle deviceInfo
-        #self.deviceInfo = {}
+
+        await self.bleDriver.connect()
+        asyncio.create_task(self.onFinished())  # cleanup callback when bleClient is finished
+
+        self.deviceInfo = await self.getDeviceInfo()
+
         logger.info(pprint.pformat(self.deviceInfo))
 
         await self.bleDriver.subscribeToBpData(self.bpDataHandler)
         await self.bleDriver.subscribeToCommands(self.commandHandler)
 
         logger.debug("BLE indications configured.")
+
     async def commandHandler(self, data: bytearray):
         logger.debug(f"[s2c] {data.hex()}")
         match data[0]:
             case 0xa0:
                 self.setPassword(data[1:5])
                 await self.setBroadcastId()
-                #asyncio.get_event_loop().create_task(self.setBroadcastId())
             case 0xa1:
-                #challenge = data[1:5]
-                #logger.debug(f"[s2c] 0xa1 setChallenge({challenge.hex()})")
                 await self.setChallenge(data[1:5])
                 await self.setTime()
-                #asyncio.get_event_loop().create_task(self.setChallenge(data[1:5]))
-                #asyncio.get_event_loop().create_task(self.setTime())
                 # TODO: if pairing, then self.setWaitingForData()
             case 0x22:
                 logger.debug("[s2c] 0x22 deviceWillDisconnect")
-                # TODO: Terminate connection
+                await self.bleDriver.disconnect()
             case _:
                 pass
+
     async def bpDataHandler(self, dataBytes: bytearray):
         data = util.parseBpData(dataBytes)
 
@@ -151,7 +156,11 @@ class TranstekController(object):
 
         logger.info(pprint.pformat(data))
         await self.setWaitingForData()
-        #asyncio.get_event_loop().create_task(self.setWaitingForData())
+
+    def close(self):
+        '''Cleanup TranstekController after connection is done.'''
+        # add terminiation sigil to queue
+        self.bpDataQueue.put_nowait(None)
 
     async def bpData(self):
         '''Async generator returning BP data'''
@@ -165,6 +174,11 @@ class TranstekController(object):
 
             yield data
             self.bpDataQueue.task_done()
+
+    async def join(self):
+        '''Wait until this Controller's life cycle is finished (as determined by its bleDriver)'''
+        await self.bleDriver.join()
+        self.close()
 
     async def getDeviceInfo(self):
         data = {}

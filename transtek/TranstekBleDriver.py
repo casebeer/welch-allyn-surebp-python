@@ -1,6 +1,10 @@
 import logging
-logger = logging.getLogger(__name__)
 
+from bleak import (
+    BleakClient,
+)
+
+import asyncio
 import pprint
 
 from bleak import (
@@ -15,15 +19,45 @@ from .bleUuids import (
     TRANSTEK_S2C_COMMAND_INDICATE_CHAR,
 )
 
+logger = logging.getLogger(__name__)
+BLE_CONNECT_TIMEOUT_SECONDS = 60
+
 class TranstekBleDriver(object):
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, deviceOrAddress):
+        self.deviceOrAddress = deviceOrAddress
+        self.client = BleakClient(
+                        deviceOrAddress,
+                        disconnected_callback=lambda client: asyncio.create_task(self.disconnect()),
+                        timeout=BLE_CONNECT_TIMEOUT_SECONDS
+                      )
+        self.is_connected = self.client.is_connected
+        self.finished = asyncio.Event()
+
+    async def connect(self):
+        await self.client.connect()
         self.bpService = self.client.services.get_service(TRANSTEK_BP_SERVICE)
         self.bpChar = self.bpService.get_characteristic(TRANSTEK_BP_DATA_INDICATE_CHAR)
         self.c2sCommandChar = self.bpService.get_characteristic(TRANSTEK_C2S_COMMAND_CHAR)
         self.s2cCommandChar = self.bpService.get_characteristic(TRANSTEK_S2C_COMMAND_INDICATE_CHAR)
 
+        self.is_connected = self.client.is_connected
+
         logger.debug(self.formatGattInfo())
+
+    async def disconnect(self):
+        logger.info("Disconnecting and cleaning up TranstekBleDriver...")
+        # cleanup
+        if self.client.is_connected:
+            await self.client.disconnect()
+        self.is_connected = False
+        self.finished.set()
+
+    async def join(self):
+        '''Wait until this bleDriver's BleakClient has disconnected'''
+        if not self.is_connected:
+            return
+        await self.finished.wait()
+
 
     def formatGattInfo(self):
         services = self.client.services.services
@@ -72,10 +106,6 @@ class TranstekBleDriver(object):
                 return
             except Exception as e:
                 logger.error(f"Problem writing to command characteristic. client.is_connected = {self.client.is_connected} Error: {e}")
-                if not self.client.is_connected:
-                    logger.info(f"Attempting to reconnect client... ({retries} retries remain)")
-                    await self.client.connect()
-
 
 
 def gattInfo(client):
