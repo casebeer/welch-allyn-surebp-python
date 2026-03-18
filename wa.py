@@ -11,6 +11,7 @@ bleak_logger.setLevel(logging.DEBUG)
 
 import asyncio
 import sys
+import os
 
 from transtek import (
   TranstekController,
@@ -25,7 +26,12 @@ from transtek.bleUuids import (
 
 async def main():
   logging.basicConfig(level=logging.DEBUG)
-  password = bytearray.fromhex(sys.argv[1])
+  password = bytearray.fromhex(os.environ.get('WA_BLE_PASSWORD'))
+
+  if not password:
+    raise Exception("You must provide the 4-byte BLE device 'password' as an 8-hex-digit string in the "
+                "WA_BLE_PASSWORD environment variable. "
+                "\ne.g. WA_BLE_PASSWORD=aabbccdd python wa.py")
 
   # TODO: Data storage handler for password, bp data, and low battery status
   #transtekController = TranstekController(MockTranstekBleDriver(), bytearray([ 0xaa, 0xbb, 0xcc, 0xdd ]))
