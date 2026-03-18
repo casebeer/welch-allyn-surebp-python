@@ -23,34 +23,38 @@ class TranstekBleDriver(object):
     self.c2sCommandChar = self.bpService.get_characteristic(TRANSTEK_C2S_COMMAND_CHAR)
     self.s2cCommandChar = self.bpService.get_characteristic(TRANSTEK_S2C_COMMAND_INDICATE_CHAR)
 
-    self.printGattInfo()
+    logger.debug(self.formatGattInfo())
 
-  def printGattInfo(self):
+  def formatGattInfo(self):
     services = self.client.services.services
     chars = self.client.services.characteristics
     descs = self.client.services.descriptors
-    pprint.pprint({
-      f"handle 0x{k:04x}": f"{v.description} ({v.uuid})" for (k, v) in services.items()
-    })
-    pprint.pprint({
-      f"handle 0x{k:04x}": f"{v.description} ({v.uuid}) {v.properties}" for (k, v) in chars.items()
-    })
-    pprint.pprint({
-      f"handle 0x{k:04x}": f"{v.description} ({v.uuid}) for {v.characteristic_uuid} (handle {v.characteristic_handle:04x})" for (k, v) in descs.items()
-    })
 
-    printGattInfo(self.client)
+    response = []
+    response.append(pprint.pformat({
+      f"handle 0x{k:04x}": f"{v.description} ({v.uuid})" for (k, v) in services.items()
+    }))
+    response.append(pprint.pformat({
+      f"handle 0x{k:04x}": f"{v.description} ({v.uuid}) {v.properties}" for (k, v) in chars.items()
+    }))
+    response.append(pprint.pformat({
+      f"handle 0x{k:04x}": f"{v.description} ({v.uuid}) for {v.characteristic_uuid} (handle {v.characteristic_handle:04x})" for (k, v) in descs.items()
+    }))
+
+    response.append(formatGattInfo((self.client)))
+
+    return "\n".join(response)
 
   async def subscribeToCommands(self, handler):
     async def wrapper(characteristic: BleakGATTCharacteristic, data: bytearray):
-      print(f"[wrapper] command characteristic callback: {data.hex()}")
+      logger.debug(f"[wrapper] command characteristic callback: {data.hex()}")
       return await handler(data)
     #await self.client.start_notify(TRANSTEK_S2C_COMMAND_INDICATE_CHAR, wrapper)
     await self.client.start_notify(self.s2cCommandChar, wrapper)
 
   async def subscribeToBpData(self, handler):
     async def wrapper(characteristic: BleakGATTCharacteristic, data: bytearray):
-      print(f"[wrapper] bpdata characteristic callback: {data.hex()}")
+      logger.debug(f"[wrapper] bpdata characteristic callback: {data.hex()}")
       return await handler(data)
     #await self.client.start_notify(TRANSTEK_BP_DATA_INDICATE_CHAR, wrapper)
     await self.client.start_notify(self.bpChar, wrapper)
@@ -118,14 +122,16 @@ def shortenUuidString(uuid):
     return f"0x{value:08x}"
 
 
-def printGattInfo(client):
+def formatGattInfo(client):
   services = client.services.services
   chars = client.services.characteristics
   descs = client.services.descriptors
 
+  response = []
   for handle, service in services.items():
-    print(f"{formatHandle(handle)} \"{service.description}\" service ({shortenUuidString(service.uuid)})")
+    response.append(f"{formatHandle(handle)} \"{service.description}\" service ({shortenUuidString(service.uuid)})")
     for char in service.characteristics:
-      print(f"  {formatHandle(char.handle)} char {char.description} ({shortenUuidString(char.uuid)}) {char.properties}")
+      response.append(f"  {formatHandle(char.handle)} char {char.description} ({shortenUuidString(char.uuid)}) {char.properties}")
       for desc in char.descriptors:
-        print(f"    {formatHandle(desc.handle)} desc {desc.description} ({shortenUuidString(desc.uuid)})")
+        response.append(f"    {formatHandle(desc.handle)} desc {desc.description} ({shortenUuidString(desc.uuid)})")
+  return "\n".join(response)

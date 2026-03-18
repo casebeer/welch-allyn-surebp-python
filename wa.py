@@ -7,6 +7,7 @@ from bleak import (
 import logging
 bleak_logger = logging.getLogger("bleak")
 bleak_logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 import asyncio
@@ -38,7 +39,7 @@ async def main():
   #await transtekController.initialize()
   #return
 
-  print("Scanning for BLE devices...")
+  logger.info("Scanning for BLE devices...")
 #  device = await BleakScanner.find_device_by_filter(
 #    filterfunc = foobar,
 #    return_adv = False,
@@ -53,7 +54,7 @@ async def main():
 #    )
 #
 #  if len(devices) == 0:
-#    print("No devices found. Exiting.")
+#    logger.info("No devices found. Exiting.")
 #    return
 #  else:
 #    device = devices[0]
@@ -83,11 +84,14 @@ async def main():
   #async with BleakClient(device) as client:
   client = BleakClient(device)
   #model_number = await client.read_gatt_char(MANUFACTURER_NAME_CHAR)
-  #print("Model number = {}".format(model_number))
+  #logger.info("Model number = {}".format(model_number))
 
   await client.connect()
 
   transtekController = TranstekController(TranstekBleDriver(client), password)
+
+  # Once the controller is initialized, it will respond asynchronously to BLE advertisements and
+  # indications from the BP device.
   await transtekController.initialize()
   await asyncio.sleep(1000)
 
