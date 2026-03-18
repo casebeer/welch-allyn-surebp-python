@@ -1,5 +1,5 @@
 
-from .util import (
+from transtek.util import (
     convertTimestampToDatetime,
     verifyChallengeResponse,
 )

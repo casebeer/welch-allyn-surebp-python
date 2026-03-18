@@ -4,7 +4,7 @@ logging.basicConfig(level=logging.DEBUG)
 import asyncio
 import pytest
 
-from .TranstekController import TranstekController
+from transtek.TranstekController import TranstekController
 from .MockTranstekBleDriver import MockTranstekBleDriver
 
 pytest_plugins = ('pytest_asyncio',)
