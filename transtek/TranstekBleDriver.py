@@ -105,8 +105,10 @@ def gattInfo(client):
 
 def formatHandle(handle):
   return f"0x{handle:02x}:"
-# Format 16- and 32-bit UUIDs as short hex strings
+
+
 def shortenUuidString(uuid):
+  # Format 16- and 32-bit UUIDs as short hex strings
   # remove BLE base UUID suffix and convert to numeric value
   value = int(uuid[:8], 16)
   # print as 4 or 8 nibble hex string
@@ -114,6 +116,8 @@ def shortenUuidString(uuid):
     return f"0x{value:04x}"
   else:
     return f"0x{value:08x}"
+
+
 def printGattInfo(client):
   services = client.services.services
   chars = client.services.characteristics
