@@ -111,6 +111,9 @@ class TranstekController(object):
     def __init__(self, bleDriver, password: bytearray):
         self.bleDriver = bleDriver
         self.password = password
+
+        self.bpDataQueue = asyncio.Queue()
+
     async def initialize(self):
         logger.debug("Initializing Transtek BLE client...")
         self.deviceInfo = await self.getDeviceInfo() # TODO: handle deviceInfo
@@ -138,13 +141,31 @@ class TranstekController(object):
                 # TODO: if pairing, then self.setWaitingForData()
             case 0x22:
                 logger.debug("[s2c] 0x22 deviceWillDisconnect")
+                # TODO: Terminate connection
             case _:
                 pass
     async def bpDataHandler(self, dataBytes: bytearray):
         data = util.parseBpData(dataBytes)
+
+        self.bpDataQueue.put_nowait(data) # n.b. exception if Queue full
+
         logger.info(pprint.pformat(data))
         await self.setWaitingForData()
         #asyncio.get_event_loop().create_task(self.setWaitingForData())
+
+    async def bpData(self):
+        '''Async generator returning BP data'''
+        while True:
+            data = await self.bpDataQueue.get()
+
+            if data is None:
+                # sigil placed by our close() method, clean up and end
+                self.bpDataQueue.task_done()
+                break
+
+            yield data
+            self.bpDataQueue.task_done()
+
     async def getDeviceInfo(self):
         data = {}
         for name, char in self.deviceInfoFields:

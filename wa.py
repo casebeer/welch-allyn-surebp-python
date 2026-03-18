@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 import asyncio
 import sys
 import os
+import pprint
 
 from transtek import (
     TranstekController,
@@ -98,6 +99,10 @@ async def main():
         # Once the controller is initialized, it will respond asynchronously to BLE advertisements and
         # indications from the BP device.
         await transtekController.initialize()
+
+        async for bpData in transtekController.bpData():
+            pprint.pprint(bpData)
+
         await asyncio.sleep(1000)
 
 if __name__ == '__main__':
