@@ -44,6 +44,9 @@ followed by between zero and four bytes of data, depending on the specific comma
 Multi-byte data fields (in both commands and blood pressure data) are little endian unsigned
 16-bit or 32-bit integers.
 
+The "password" apperars to be the last 8 hex chars of the reported device info serial number,
+interpreted as four bytes. This is also the byte-wise-reversed FIRST four bytes of the MAC address.
+
 ### Known commands:
 
 - [s2c] 0xa0 <uint32le> setPassword(password) Set long-term password for use in challenge-response
@@ -95,9 +98,9 @@ The format is:
                  0x01 Device battery level OK: 1 = OK, 0 = Low battery
 '''
 class TranstekController(object):
-    def __init__(self, bleDriver, password: bytearray):
+    def __init__(self, bleDriver):
         self.bleDriver = bleDriver
-        self.password = password
+        self.password = None # will set password after readDeviceInfo
 
         self.bpDataQueue = asyncio.Queue()
 
@@ -112,6 +115,13 @@ class TranstekController(object):
         asyncio.create_task(self.onFinished())  # cleanup callback when bleClient is finished
 
         self.deviceInfo = await self.getDeviceInfo()
+
+        # Set password using last 8 hex chars of reported SERIAL_NUMBER
+        # n.b. the reported serial number is just the device's BLE MAC address reversed octet-wise,
+        # i.e. 11:22:33:44:55:66 -> 66:55:44:33:22:11, so the password is also the first four bytes
+        # of the MAC address, byte-wise reversed.
+        serialNumber = self.deviceInfo[DeviceInfoCharacteristics.SERIAL_NUMBER.name]
+        self.password = bytes.fromhex(serialNumber[-8:])
 
         logger.info(pprint.pformat(self.deviceInfo))
 
@@ -173,7 +183,6 @@ class TranstekController(object):
             data[char.name] = await self.bleDriver.readDeviceInfoCharacteristic(char.value)
         return data
     def setPassword(self, password):
-        # TODO: Store password
         logger.debug(f"[s2c] 0xa0 setPassword({password.hex()})")
         pass
     async def setBroadcastId(self):

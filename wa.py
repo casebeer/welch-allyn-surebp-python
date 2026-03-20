@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 import asyncio
 import sys
-import os
 import pprint
 
 from surebp import (
@@ -29,20 +28,9 @@ from surebp.bleUuids import (
 async def main():
     #logging.basicConfig(level=logging.INFO)
     logging.basicConfig(level=logging.DEBUG)
-    password = bytearray.fromhex(os.environ.get('WA_BLE_PASSWORD', ''))
 
     # optional device address – connect directly to device without waiting for advertisements
     deviceAddress = sys.argv[1] if len(sys.argv) > 1 else None
-
-    if not password:
-        raise Exception("You must provide the 4-byte BLE device 'password' as an 8-hex-digit "
-                        "string in the WA_BLE_PASSWORD environment variable. "
-                        "\ne.g. WA_BLE_PASSWORD=aabbccdd python wa.py")
-
-    # TODO: Data storage handler for password, bp data, and low battery status
-    #transtekController = TranstekController(MockTranstekBleDriver(), bytearray([ 0xaa, 0xbb, 0xcc, 0xdd ]))
-    #await transtekController.initialize()
-    #return
 
 #    device = await BleakScanner.find_device_by_filter(
 #        filterfunc = foobar,
@@ -98,7 +86,7 @@ async def main():
 #
 #        await client.connect()
 
-    transtekController = TranstekController(TranstekBleDriver(device), password)
+    transtekController = TranstekController(TranstekBleDriver(device))
 
     # Once the controller is initialized, it will respond asynchronously
     # to BLE indications from the BP device.

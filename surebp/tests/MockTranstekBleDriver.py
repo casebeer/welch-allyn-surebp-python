@@ -4,20 +4,31 @@ from surebp.util import (
     verifyChallengeResponse,
 )
 
+from surebp.bleUuids import (
+    DeviceInfoCharacteristics,
+)
+
 import asyncio
 import datetime
 import random
 import struct
 
+MOCK_DEVICE_INFO = {
+    DeviceInfoCharacteristics.SERIAL_NUMBER.value: "8899AABBCCDD", # last 8 chars used as password
+}
+
 class MockTranstekBleDriver(object):
     def __init__(self, client=None):
         self.mockServer = MockTranstekBpMonitor()
+        self.finished = asyncio.Event()
+    async def connect(self):
+        return
     async def subscribeToCommands(self, handler):
         await self.mockServer.subscribeToCommands(handler)
     async def subscribeToBpData(self, handler):
         self.mockServer.subscribeToBpData(handler)
     async def readDeviceInfoCharacteristic(self, char):
-        return "NOT IMPLEMENTED"
+        return self.mockServer.readDeviceInfoCharacteristic(char)
     async def writeCommand(self, commandBytes):
         await self.mockServer.c2sCommand(commandBytes)
 
@@ -30,6 +41,8 @@ class MockTranstekBpMonitor(object):
         await self.setChallenge()
     def subscribeToBpData(self, handler):
         self.bpDataHandler = handler
+    def readDeviceInfoCharacteristic(self, char):
+        return MOCK_DEVICE_INFO.get(char, "NOT IMPLEMENTED")
     async def c2sCommand(self, commandBytes):
         print("[mock][c2s] {}".format(commandBytes.hex()))
         match commandBytes[0]:
