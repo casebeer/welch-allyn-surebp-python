@@ -114,9 +114,10 @@ async def main():
 
     print("BLE connection done!")
 
+    return 0
 
-def clientDisconnect(client):
-    # BleakClient disconnect callback
-    logger.info("Client disconnected.")
+def run():
+    return asyncio.run(main())
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    sys.exit(run())
