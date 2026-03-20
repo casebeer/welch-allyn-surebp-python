@@ -144,19 +144,21 @@ command characteristic (0x8a81).
 
 The format is:
 
- -  [0] uint8    Header byte
- -  [1] uint16le Systolic pressure (mmHg)
- -  [3] uint16le Diastolic pressure (mmHg)
- -  [5] uint16le [unknown]
- -  [7] uint32le Timestamp in seconds since 2010-01-01 00:00:00 local time
- - [11] uint16le Heart rate (bpm)
- - [13] uint8    [unkown]
- - [14] uint8    BP data flags
-   - 0x01 Motion detected during BP reading
-   - 0x04 Irregular heartbeat detected during BP reading
- - [15] uint8    [unknown]
- - [16] uint8    Device flags
-   - 0x01 Device battery level OK: 1 = OK, 0 = Low battery
+ Offset | Type     | Description
+--------|----------|-----------------------------------------------------------
+ 0      | uint8    | Header byte
+ 1      | uint16le | Systolic pressure (mmHg)
+ 3      | uint16le | Diastolic pressure (mmHg)
+ 5      | uint16le | *[unknown]*
+ 7      | uint32le | Timestamp in seconds since 2010-01-01 00:00:00 local time
+ 11     | uint16le | Heart rate (bpm)
+ 13     | uint8    | *[unknown]*
+ 14     | uint8    | BP data flags
+ &nbsp; |          | 0x01 Motion detected during BP reading
+ &nbsp; |          | 0x04 Irregular heartbeat detected during BP reading
+ 15     | uint8    | *[unknown]*
+ 16     | uint8    | Device flags
+ &nbsp; |          | 0x01 Device battery level OK: 1 = OK, 0 = Low battery
 
 ## Future work
 
