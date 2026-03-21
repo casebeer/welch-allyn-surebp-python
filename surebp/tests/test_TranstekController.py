@@ -5,17 +5,26 @@ import asyncio
 import pytest
 
 from surebp.TranstekController import TranstekController
-from .MockTranstekBleDriver import MockTranstekBleDriver
+from surebp.bleUuids import DeviceInfoCharacteristics
+from . import MockTranstekBleDriver
 
 pytest_plugins = ('pytest_asyncio',)
 
 @pytest.mark.asyncio
 async def testTranstekController():
-    transtekController = TranstekController(
-        MockTranstekBleDriver(),
-        password=bytearray([ 0xaa, 0xbb, 0xcc, 0xdd ])
-    )
+    transtekController = TranstekController(MockTranstekBleDriver.MockTranstekBleDriver())
     await transtekController.initialize()
+
+    assert transtekController.deviceInfo[DeviceInfoCharacteristics.SERIAL_NUMBER.name] ==\
+            MockTranstekBleDriver.MOCK_SERIAL_NUMBER
+
+    # this should block until all data is done and the Mock object disconnects
+    await transtekController.join()
+
+    count = 0
+    async for data in transtekController.bpData():
+        count += 1
+    assert count == 3
 
 async def main():
     await testTranstekController()

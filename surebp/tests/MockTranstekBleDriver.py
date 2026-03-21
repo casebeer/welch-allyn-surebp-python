@@ -13,13 +13,17 @@ import datetime
 import random
 import struct
 
+MOCK_SERIAL_NUMBER = "8899AABBCCDD" # last 8 chars used as password
 MOCK_DEVICE_INFO = {
-    DeviceInfoCharacteristics.SERIAL_NUMBER.value: "8899AABBCCDD", # last 8 chars used as password
+    DeviceInfoCharacteristics.SERIAL_NUMBER.value: MOCK_SERIAL_NUMBER,
 }
+MOCK_DEVICE_PASSWORD = bytearray([ 0xaa, 0xbb, 0xcc, 0xdd ])
+MOCK_BP_DATA = bytearray([0x34, 0xff, 0x00, 0xfe, 0x00, 0x00, 0x00, 0xff, 0xff,
+                          0xff, 0x00, 0xfd, 0x00, 0x00, 0x00, 0x00, 0x01 ])
 
 class MockTranstekBleDriver(object):
     def __init__(self, client=None):
-        self.mockServer = MockTranstekBpMonitor()
+        self.mockServer = MockTranstekBpMonitor(disconnectHandler=self.disconnect)
         self.finished = asyncio.Event()
     async def connect(self):
         return
@@ -31,11 +35,16 @@ class MockTranstekBleDriver(object):
         return self.mockServer.readDeviceInfoCharacteristic(char)
     async def writeCommand(self, commandBytes):
         await self.mockServer.c2sCommand(commandBytes)
+    async def disconnect(self):
+        self.finished.set()
+    async def join(self):
+        await self.finished.wait()
 
 class MockTranstekBpMonitor(object):
-    def __init__(self):
+    def __init__(self, disconnectHandler):
         self.clientReadyForData = asyncio.Event()
-        self.password = bytearray([ 0xaa, 0xbb, 0xcc, 0xdd ])
+        self.password = MOCK_DEVICE_PASSWORD
+        self.disconnectHandler = disconnectHandler
     async def subscribeToCommands(self, handler):
         self.commandHandler = handler
         await self.setChallenge()
@@ -71,6 +80,8 @@ class MockTranstekBpMonitor(object):
             print("[mock]           challenge-response accepted")
         else:
             print("[mock]           challenge-response FAILED")
+        assert valid
+
     async def acceptTime(self, timestampBytes):
         timestampSeconds, = struct.unpack('<I', timestampBytes)
         print("[mock][c2s] 0x02 setTime({})".format(timestampSeconds))
@@ -78,15 +89,26 @@ class MockTranstekBpMonitor(object):
         providedTime = convertTimestampToDatetime(timestampSeconds)
         print("[mock]           time set to {}".format(providedTime))
         print("[mock]           actual time {}".format(actualTime))
+
+        # TODO: ensure all time is frozen during test
+        assert abs((providedTime - actualTime).total_seconds()) < 2
+
         await self.sendAllBpData()
+
     async def sendAllBpData(self):
         for i in range(3):
             self.clientReadyForData.clear()
-            await self.s2cBpData(bytearray([0x34, 0xff, 0x00, 0xfe, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x00, 0xfd, 0x00, 0x00, 0x00, 0x00, 0x01 ]))
+            await self.s2cBpData(MOCK_BP_DATA)
             await self.clientReadyForData.wait()
+
+        await self.disconnect()
+
+    async def disconnect(self):
+        await self.disconnectHandler()
     async def s2cCommand(self, commandBytes):
         print("[mock][s2c] {}".format(commandBytes.hex()))
         await self.commandHandler(commandBytes)
+
     async def s2cBpData(self, bpDataBytes):
         print("[mock][s2c][bpData] {}".format(bpDataBytes.hex()))
         await self.bpDataHandler(bpDataBytes)
