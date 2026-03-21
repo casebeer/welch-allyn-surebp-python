@@ -14,12 +14,12 @@ Tested with the Welch Allyn 1700 SureBP H-BP100-SBP device.
 Likely also works with the Welch Allyn 1500 RPM-BP100 device.
 
 These devices appear to use a BLE chipset and protocol from Transtek. The bulk of the code handling
-this protocol is in the `surebp` package in this project.
+this protocol is in the `bp100` package in this project.
 
 ## Installation
 
-    git clone https://github.com/casebeer/welch-allyn-surebp-python
-    cd welch-allyn-surebp-python
+    git clone https://github.com/casebeer/welch-allyn-bp100-python
+    cd welch-allyn-bp100-python
     python3 -m venv venv
     venv/bin/pip install -e .
 

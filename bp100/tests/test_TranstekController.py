@@ -4,8 +4,8 @@ logging.basicConfig(level=logging.DEBUG)
 import asyncio
 import pytest
 
-from surebp.TranstekController import TranstekController
-from surebp.bleUuids import DeviceInfoCharacteristics
+from bp100.TranstekController import TranstekController
+from bp100.bleUuids import DeviceInfoCharacteristics
 from . import MockTranstekBleDriver
 
 pytest_plugins = ('pytest_asyncio',)

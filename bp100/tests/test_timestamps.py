@@ -1,7 +1,7 @@
 
 import datetime
 
-from surebp.util import (
+from bp100.util import (
     parseTranstekTimestamp,
     transtekTimestamp,
 )

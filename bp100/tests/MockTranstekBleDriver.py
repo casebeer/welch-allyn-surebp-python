@@ -1,10 +1,10 @@
 
-from surebp.util import (
+from bp100.util import (
     convertTimestampToDatetime,
     verifyChallengeResponse,
 )
 
-from surebp.bleUuids import (
+from bp100.bleUuids import (
     DeviceInfoCharacteristics,
 )
 

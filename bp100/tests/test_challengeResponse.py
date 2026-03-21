@@ -1,7 +1,7 @@
 
 import random
 
-from surebp.util import (
+from bp100.util import (
     transtekChallengeResponse,
     transtekChallengeResponseInt,
 )

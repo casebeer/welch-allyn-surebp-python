@@ -15,13 +15,13 @@ import asyncio
 import sys
 import pprint
 
-from surebp import (
+from bp100 import (
     TranstekController,
     TranstekBleDriver,
     #MockTranstekBleDriver,
 )
 
-from surebp.bleUuids import (
+from bp100.bleUuids import (
     GattServices,
 )
 
