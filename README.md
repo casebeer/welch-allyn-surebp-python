@@ -99,6 +99,13 @@ For API usage, see the `bp100/cli.py` script that provides the `wa` CLI entrypoi
 
     asyncio.run(run())
 
+## Testing
+
+Install with `test` dependencies and use `pytest`:
+
+    pip install -e .[test]
+    pytest
+
 ## Notes
 
 - During development, delays from printing to `stdout` caused sufficient BLE timing problems to
