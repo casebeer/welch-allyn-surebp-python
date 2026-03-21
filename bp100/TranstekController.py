@@ -123,7 +123,7 @@ class TranstekController(object):
         serialNumber = self.deviceInfo[DeviceInfoCharacteristics.SERIAL_NUMBER.name]
         self.password = bytes.fromhex(serialNumber[-8:])
 
-        logger.info(pprint.pformat(self.deviceInfo))
+        logger.debug(pprint.pformat(self.deviceInfo))
 
         await self.bleDriver.subscribeToBpData(self.bpDataHandler)
         await self.bleDriver.subscribeToCommands(self.commandHandler)
@@ -151,7 +151,7 @@ class TranstekController(object):
 
         self.bpDataQueue.put_nowait(data) # n.b. exception if Queue full
 
-        logger.info(pprint.pformat(data))
+        logger.debug(pprint.pformat(data))
         await self.setWaitingForData()
 
     def close(self):

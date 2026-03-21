@@ -23,33 +23,13 @@ from .bleUuids import (
 )
 
 async def main():
-    #logging.basicConfig(level=logging.INFO)
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
+    #logging.basicConfig(level=logging.DEBUG)
 
     # optional device address – connect directly to device without waiting for advertisements
     deviceAddress = sys.argv[1] if len(sys.argv) > 1 else None
 
-#    device = await BleakScanner.find_device_by_filter(
-#        filterfunc = foobar,
-#        return_adv = False,
-#        timeout = 60,
-#        service_uuids=[GattServices.TRANSTEK_BP.value],
-#        )
-##    filters={"UUIDs":["1d93af38-9239-11ea-bb37-0242ac130002"], "DuplicateData":False}
-#    devices = await BleakScanner.discover(
-#        return_adv = False,
-#        timeout = 60,
-#        service_uuids=[GattServices.TRANSTEK_BP.value.lower()],
-#        )
-#
-#    if len(devices) == 0:
-#        logger.info("No devices found. Exiting.")
-#        return
-#    else:
-#        device = devices[0]
-
     if deviceAddress is None:
-        logger.info("Scanning for BLE devices...")
         # Normalized service UUIDs since Bleak will not match on a short/16 bit UUID
         serviceUuids = [bleak.uuids.normalize_uuid_str(u) for u in [GattServices.TRANSTEK_BP.value]]
         async with BleakScanner(
@@ -57,31 +37,18 @@ async def main():
             ) as scanner:
             logger.info(f"Scanning for service UUIDs {serviceUuids}...")
 
-            logger.info(f"\nadvertisement packets:")
             async for bleDevice, advertisementData in scanner.advertisement_data():
                 if advertisementData.service_uuids:
                     logger.info(f"Got matching UUID: {advertisementData.service_uuids}")
                     # return the first matching device seen
                     device = bleDevice
                     break
-            logger.info("Broken out of scanning loop...")
-        logger.info("Found BP monitor device.")
+            logger.debug("Broken out of scanning loop...")
     else:
         logger.info(f"Connecting to specified BLE device with address {deviceAddress}")
         device = deviceAddress
-    logger.info(device)
 
-    logger.info("Connecting to BP monitor...")
-
-#    async with BleakClient(
-#        device,
-#        disconnected_callback=clientDisconnect,
-#        timeout=BLE_CONNECT_TIMEOUT_SECONDS
-#        ) as client:
-#        #model_number = await client.read_gatt_char(MANUFACTURER_NAME_CHAR)
-#        #logger.info("Model number = {}".format(model_number))
-#
-#        await client.connect()
+    logger.info(f"Connecting to BP monitor {device}...")
 
     transtekController = TranstekController(TranstekBleDriver(device))
 
@@ -90,14 +57,13 @@ async def main():
     await transtekController.initialize()
 
     # wait until the client is disconnected before printing, etc.
-
-    async for bpData in transtekController.bpData():
-        pprint.pprint(bpData)
-
-    print("BLE controller out of data")
     await transtekController.join()
 
-    print("BLE connection done!")
+    logger.info("BLE connection done!")
+
+    pprint.pprint(transtekController.deviceInfo)
+    async for bpData in transtekController.bpData():
+        pprint.pprint(bpData)
 
     return 0
 

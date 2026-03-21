@@ -46,7 +46,7 @@ class TranstekBleDriver(object):
         logger.debug(self.formatGattInfo())
 
     async def disconnect(self):
-        logger.info("Disconnecting and cleaning up TranstekBleDriver...")
+        logger.debug("Disconnecting and cleaning up TranstekBleDriver...")
         # cleanup
         if self.client.is_connected:
             await self.client.disconnect()
