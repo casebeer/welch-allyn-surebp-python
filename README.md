@@ -33,16 +33,16 @@ You'll need:
 blood pressure reading has been downloaded by any app, it is erased from the device and will NOT be
 availalble for reading by the official Welch Allyn app.*
 
-Use the `wa.py` script to test connection to your blood pressure monitor.
+Use the `wa` CLI script (`bp100/cli.py`) to test connection to your blood pressure monitor.
 
 First, start the script:
 
-    venv/bin/python wa.py
+    venv/bin/wa
 
 Now, use the blood pressure meter to take a reading. Once the reading completes, the blood pressure
 device will broadcast via BLE.
 
-The `wa.py` script should receive this broadcast, connect to the device, and download and print out
+The `wa` script should receive this broadcast, connect to the device, and download and print out
 all blood pressure readings on the device. Note that the device will only send each BP reading once,
 to one client, so after reading, there will be no BP data stored on the device.
 
@@ -53,7 +53,7 @@ only one (the current) reading.
 You can also specify an exact device BLE address (or, on MacOS, a device address UUID), and the
 script will attempt to connect to that device rather than wait to receive an advertisement:
 
-    venv/bin/python wa.py [BLE address or UUID]
+    venv/bin/wa [BLE address or UUID]
 
 ## Notes
 
